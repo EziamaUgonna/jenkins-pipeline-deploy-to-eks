@@ -1,14 +1,15 @@
 pipeline {
     agent any
     environment {
-        aws_access_key_id= credentials('aws_access_key_id')
-        aws_secret_access_key = credentials('aws_secret_access_key')
         AWS_DEFAULT_REGION = "us-east-1"
     }
     stages {
         stage("Create an EKS Cluster") {
             steps {
-                script {
+                withCredentials([
+                    string(credentialsId: 'aws_access_key_id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws_secret_access_key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
                     sh "cd terraform"
                     sh "terraform init"
                     sh "terraform apply -auto-approve"
@@ -17,7 +18,10 @@ pipeline {
         }
         stage("Deploy to EKS") {
             steps {
-                script {
+                withCredentials([
+                    string(credentialsId: 'aws_access_key_id', variable: 'AWS_ACCESS_KEY_ID'),
+                    string(credentialsId: 'aws_secret_access_key', variable: 'AWS_SECRET_ACCESS_KEY')
+                ]) {
                     sh "cd kubernetes"
                     sh "aws eks update-kubeconfig --name myapp-eks-cluster"
                     sh "kubectl apply -f nginx-deployment.yaml"
@@ -27,3 +31,4 @@ pipeline {
         }
     }
 }
+
